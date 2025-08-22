@@ -1,40 +1,34 @@
-# 404-TK1.0 License
+404-TK1.0 License
 
-## Preamble
-This software is provided **AS IS**.  
-There is no warranty, no guarantee of functionality, no promise of privacy, and no expectation of support.  
+Preamble
+This software is provided AS IS.
+There is no warranty, no guarantee of functionality, no promise of privacy, and no expectation of support.
 If you use this software, you do so entirely at your own risk.
 
----
+1. No Warranty or Liability
+- This project comes with absolutely no warranty.
+- The authors and contributors are not responsible or liable for any issues, damages, or losses of any kind.
+- If the software breaks, that is your problem.
+- If it somehow breaks your system, you have probably done something catastrophic — because Python by itself really cannot do that.
 
-## 1. No Warranty or Liability
-- This project comes with **absolutely no warranty**.  
-- The authors and contributors are **not responsible or liable** for any issues, damages, or losses of any kind.  
-- If the software breaks, that is **your problem**.  
-- If it somehow breaks your system, you have probably done something catastrophic — because Python by itself really cannot do that.  
+2. Data and Privacy
+- This software logs data to an external API and to internal log files.
+- By using it, you accept that this happens and assume all associated risks.
+- There is no expectation of privacy when running this software.
 
----
+3. Usage Restrictions
+- Do not request support, fixes, or new features from the authors.
+- Do not attempt to resell this project or any derivative.
+- Do not claim this project as your own.
 
-## 2. Data and Privacy
-- This software **logs data to an external API** and to internal log files.  
-- By using it, you accept that this happens and assume all associated risks.  
-- There is **no expectation of privacy** when running this software.  
+4. Contributions
+- You may fork and modify this project.
+- If you make a groundbreaking change, credit will be acknowledged.
+- Unless your changes fundamentally alter the project into something entirely new, the code remains under the ownership of the original authors.
 
----
-
-## 3. Usage Restrictions
-- Do **not** request support, fixes, or new features from the authors.  
-- Do **not** attempt to resell this project or any derivative.  
-- Do **not** claim this project as your own.  
-
----
-
-## 4. Contributions
-- You may fork and modify this project.  
-- If you make a **groundbreaking change**, credit will be acknowledged.  
-- Unless your changes fundamentally alter the project into something entirely new, the code remains under the ownership of the original authors.  
-
----
-
-## 5. Summary
-This license boils down to:  
+5. Summary
+This license boils down to:
+- No liability: If it breaks, it’s your problem.
+- No ownership transfer: You can’t claim this as yours.
+- No reselling: You can’t profit from this.
+- Contribution is welcome: But the project is still ours unless you truly reinvent it.
