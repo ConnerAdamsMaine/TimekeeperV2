@@ -1,0 +1,11 @@
+.venv
+.env
+.vscode
+.python-version
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.json
+src/Commands
