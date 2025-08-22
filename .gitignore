@@ -2,6 +2,7 @@
 .env
 .vscode
 .python-version
+.gitignore
 __pycache__/
 *.pyc
 *.pyo
