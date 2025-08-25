@@ -1,41 +1,44 @@
-import sqlite3
-from pathlib import Path
-import datetime
-from datetime import datetime as dt
+import asyncpg
 
 class DBHelper:
-    def __init__(self, dbPath: Path):
-        self.dbPath = dbPath
-        self.conn = sqlite3.connect(dbPath)
-        self.conn.row_factory = sqlite3.Row
-        self.createTable()
+    def __init__(self, pool):
+        self.pool = pool
 
-    def createTable(self):
-        self.conn.execute("""
-            CREATE TABLE IF NOT EXISTS clockSessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                userId INTEGER NOT NULL,
-                category TEXT NOT NULL,
-                clockIn TIMESTAMP NOT NULL,
-                clockOut TIMESTAMP
-            )
-        """)
-        self.conn.commit()
+    async def createServerTable(self, serverId: int):
+        tableName = f"clockSessions_{serverId}"
+        async with self.pool.acquire() as conn:
+            await conn.execute(f"""
+                CREATE TABLE IF NOT EXISTS {tableName} (
+                    id SERIAL PRIMARY KEY,
+                    userId BIGINT NOT NULL,
+                    category VARCHAR(255) NOT NULL,
+                    clockIn TIMESTAMP NOT NULL,
+                    clockOut TIMESTAMP
+                )
+            """)
 
-    def clockIn(self, userId: int, category: str):
-        self.conn.execute(
-            "INSERT INTO clockSessions (userId, category, clockIn) VALUES (?, ?, ?)",
-            (userId, category, dt.now(datetime.timezone.utc()))
-        )
-        self.conn.commit()
+    async def clockIn(self, serverId: int, userId: int, category: str):
+        tableName = f"clockSessions_{serverId}"
+        async with self.pool.acquire() as conn:
+            await conn.execute(f"""
+                INSERT INTO {tableName} (userId, category, clockIn)
+                VALUES ($1, $2, NOW())
+            """, userId, category)
 
-    def clockOut(self, userId: int):
-        self.conn.execute(
-            "UPDATE clockSessions SET clockOut=? WHERE userId=? AND clockOut IS NULL",
-            (dt.now(datetime.timezone.utc()), userId)
-        )
-        self.conn.commit()
+    async def clockOut(self, serverId: int, userId: int):
+        tableName = f"clockSessions_{serverId}"
+        async with self.pool.acquire() as conn:
+            await conn.execute(f"""
+                UPDATE {tableName}
+                SET clockOut = NOW()
+                WHERE userId = $1 AND clockOut IS NULL
+            """, userId)
 
-    def getClockedInUsers(self):
-        cursor = self.conn.execute("SELECT * FROM clockSessions WHERE clockOut IS NULL")
-        return cursor.fetchall()
+    async def getClockedInUsers(self, serverId: int):
+        tableName = f"clockSessions_{serverId}"
+        async with self.pool.acquire() as conn:
+            return await conn.fetch(f"""
+                SELECT userId, category, clockIn
+                FROM {tableName}
+                WHERE clockOut IS NULL
+            """)

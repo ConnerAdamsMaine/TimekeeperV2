@@ -6,37 +6,29 @@ from Utils.dslParser import DSLParser
 from pathlib import Path
 
 class TimeTracking(commands.Cog):
-    def __init__(self, bot: commands.Bot, dbPool):
+    def __init__(self, bot, db_pool):
         self.bot = bot
-        self.db = DBHelper(dbPool)
-    
-    @app_commands.command(name="clockin", description="Clock in to start tracking your time.")
-    async def clockIn(self, interaction: discord.Interaction, category: str):
-        serverId = interaction.guild.id
-        configPath = Path(f"/Servers/{serverId}/config.dsl")
-        if not configPath.exists():
-            await interaction.response.send_message("Server configuration not found. Please contact an administrator.", ephemeral=True)
-            return
-        config = DSLParser.parseFile(configPath)
+        self.db = DBHelper(db_pool)
+
+    @app_commands.command(name="clockin", description="Clock in for a specific category.")
+    async def clockin(self, interaction: discord.Interaction, category: str):
+        server_id = interaction.guild.id
+        config_path = Path(f"servers/{server_id}/config.dsl")
+        if not config_path.exists():
+            return await interaction.response.send_message("Server config missing.")
+        config = DSLParser.parseFile(config_path)
         categories = config.get("settings", {}).get("attributes", {}).get("categories", [])
         if category not in categories:
-            await interaction.response.send_message(f"Invalid category. Available categories: {', '.join(categories)}", ephemeral=True)
-            return
-        await self.db.createServerTable(serverId)
-        await self.db.clockIn(serverId, interaction.user.id, category)
-        await interaction.response.send_message(f"You have successfully clocked in under the category '{category}'.", ephemeral=True)
-    
-    @app_commands.command(name="clockout", description="Clock out to stop tracking your time.")
-    async def clockOut(self, interaction: discord.Interaction):
-        serverId = interaction.guild.id
-        await self.db.createServerTable(serverId)
-        success, category, duration = await self.db.clockOut(serverId, interaction.user.id)
-        if not success:
-            await interaction.response.send_message("You are not currently clocked in.", ephemeral=True)
-            return
-        hours, remainder = divmod(duration, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        await interaction.response.send_message(f"You have successfully clocked out from the category '{category}'. Total time: {hours}h {minutes}m {seconds}s", ephemeral=True)
+            return await interaction.response.send_message(f"Category {category} not found on this server.")
+        await self.db.createServerTable(server_id)
+        await self.db.clockIn(server_id, interaction.user.id, category)
+        await interaction.response.send_message(f"{interaction.user.mention} clocked in under {category}.")
 
-async def setup(bot: commands.Bot):
+    @app_commands.command(name="clockout", description="Clock out for a specific category.")
+    async def clockout(self, interaction: discord.Interaction):
+        server_id = interaction.guild.id
+        await self.db.clockOut(server_id, interaction.user.id)
+        await interaction.response.send_message(f"{interaction.user.mention} clocked out.")
+
+def setup(bot):
     bot.add_cog(TimeTracking(bot, bot.dbPool))

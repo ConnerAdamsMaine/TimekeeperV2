@@ -37,9 +37,6 @@ class TimekeeperV2(commands.Bot):
             case_insensitive=True,
             owner_ids=[473622504586477589, 211991776070729728]
         )
-    
-    async def setup_bot(self):
-        self.dbPool = await asyncpg.create_pool(dsn="postgresql:///")
 
     async def on_ready(self):
         BotLogger.info(f"TimekeeperV2 is online! Logged in as {self.user.name} ({self.user.id})")
@@ -49,7 +46,8 @@ class TimekeeperV2(commands.Bot):
         BotLogger.info("Bot is ready to track time!")
     
     async def setup_hook(self):
-        for filename in os.listdir('./Commands'):
+        self.dbPool = await asyncpg.create_pool(dsn="postgresql://postgres:password@localhost:5432/timekeeper") # Awaiting setup of actual Postgre services
+        for filename in os.listdir('./Cogs'):
             if filename.endswith('.py') and not filename.startswith('_'):
                 command = filename[:-3]
                 try:
