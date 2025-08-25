@@ -10,6 +10,7 @@ from time import perf_counter_ns
 
 import os
 import json
+import asyncpg
 
 
 BotLogger = logger.bind(name="TimekeeperV2")
@@ -36,6 +37,9 @@ class TimekeeperV2(commands.Bot):
             case_insensitive=True,
             owner_ids=[473622504586477589, 211991776070729728]
         )
+    
+    async def setup_bot(self):
+        self.dbPool = await asyncpg.create_pool(dsn="postgresql:///")
 
     async def on_ready(self):
         BotLogger.info(f"TimekeeperV2 is online! Logged in as {self.user.name} ({self.user.id})")
