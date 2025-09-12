@@ -10,3 +10,5 @@ __pycache__/
 *.db
 *.json
 src/Commands
+GithubBot
+GithubBot.*
