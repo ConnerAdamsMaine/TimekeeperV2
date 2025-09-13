@@ -6,34 +6,33 @@ import logging
 
 from Utils.timemanager import TimeManager
 
-logger = logging.getLogger("commands.clockin")
+logger = logging.getLogger("commands.clockout")
 logger.setLevel(logging.INFO)
 
-class ClockIn(commands.Cog):
+class ClockOut(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         
         self.TimeManager = TimeManager
-
-    @app_commands.command(name="clockin", description="Clock in to start your work session.")
+    
+    @app_commands.command(name="clockout", description="Clock out to end your work session.")
     async def clock_in(self, interaction: discord.Interaction):
         try:
-            self.TimeManager.add_sessions({
+            self.TimeManager.remove_sessions({
                 str(interaction.user.id): {
                     "start": int(interaction.created_at.timestamp()),
                     "user": interaction.user.name
                 }
             })
-            await interaction.response.send_message("You have successfully clocked in!", ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred while clocking in: {e}", ephemeral=True)
-            logger.error(f"Error in clock_in command: {e}")
-            logger.info(f"""Relating to prior error: 
+            await interaction.response.send_message(f"An error occurred while clocking out: {e}", ephemeral=True)
+            logger.error(f"Error in clock_out command: {e}")
+            logger.info(f"""Relating to prior error:
 1: {self.TimeManager.active}
 2: {interaction.user.id}: {interaction.user.name}
 3: {interaction.context}
 """)
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(ClockIn(bot))
-    logging.log(logging.INFO, "ClockIn Cog Loaded")
+    await bot.add_cog(ClockOut(bot))
+    logging.log(logging.INFO, "ClockOut Cog Loaded")
