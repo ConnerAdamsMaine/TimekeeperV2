@@ -9,6 +9,5 @@ __pycache__/
 *.pyd
 *.db
 *.json
-src/Commands
 GithubBot
 GithubBot.*
