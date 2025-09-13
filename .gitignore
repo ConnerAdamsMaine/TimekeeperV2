@@ -11,4 +11,6 @@ __pycache__/
 *.json
 GithubBot
 GithubBot.*
-webhook.py
+logs/*
+*.log
+*.txt
