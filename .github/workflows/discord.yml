@@ -8,6 +8,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+    - name: Test Discord webhook with curl
+      run: |
+        curl -H "Content-Type: application/json" \
+          -X POST \
+          -d '{"content":"✅ GitHub Actions can talk to Discord!"}' \
+          https://discordapp.com/api/webhooks/1416152382261166281/3E6V_0rvhNuXrQdwJzx_iC2lhleMIOBSFDn7V_5G1t1TNOAwrnwVp8iDB4YQt8es4CSi
+
+
       - name: Run Discord Webhook
         uses: johnnyhuy/actions-discord-git-webhook@main
         with:
