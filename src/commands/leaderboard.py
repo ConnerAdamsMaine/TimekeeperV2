@@ -16,6 +16,7 @@ from Utils.timekeeper import (
     CircuitBreakerOpenError,
     TimeTrackerError
 )
+from Utils.activation import require_activation_slash
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -92,7 +93,6 @@ class LeaderboardCog(commands.Cog):
     # ========================================================================
     # LEADERBOARD COMMAND
     # ========================================================================
-    
     @app_commands.command(name="leaderboard", description="🏆 Show time tracking leaderboard")
     @app_commands.describe(
         category="Specific category to show (optional)",
@@ -104,6 +104,7 @@ class LeaderboardCog(commands.Cog):
         app_commands.Choice(name="This Week", value="week"),
         app_commands.Choice(name="This Month", value="month")
     ])
+    @require_activation_slash
     async def leaderboard(self, interaction: discord.Interaction, 
                          category: Optional[str] = None, 
                          timeframe: Optional[str] = "all",

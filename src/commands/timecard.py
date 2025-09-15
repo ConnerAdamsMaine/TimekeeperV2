@@ -16,6 +16,7 @@ from Utils.timekeeper import (
     CircuitBreakerOpenError,
     TimeTrackerError
 )
+from Utils.activation import require_activation_slash
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -170,12 +171,12 @@ class TimecardCog(commands.Cog):
     # ========================================================================
     # CLOCK IN COMMAND
     # ========================================================================
-    
     @app_commands.command(name="clockin", description="🕐 Clock in to start tracking time")
     @app_commands.describe(
         category="Category to track time for",
         description="Optional description for this session"
     )
+    @require_activation_slash
     async def clockin(self, interaction: discord.Interaction, category: str = "work", description: Optional[str] = None):
         """Clock in command with enterprise features"""
         start_time = datetime.now().timestamp()
@@ -355,8 +356,8 @@ class TimecardCog(commands.Cog):
     # ========================================================================
     # CLOCK OUT COMMAND
     # ========================================================================
-    
     @app_commands.command(name="clockout", description="🕐 Clock out to stop tracking time")
+    @require_activation_slash
     async def clockout(self, interaction: discord.Interaction):
         """Clock out command with session analytics"""
         start_time = datetime.now().timestamp()
@@ -505,8 +506,8 @@ class TimecardCog(commands.Cog):
     # ========================================================================
     # STATUS COMMAND
     # ========================================================================
-    
     @app_commands.command(name="status", description="📊 Check your time tracking status")
+    @require_activation_slash
     async def status(self, interaction: discord.Interaction):
         """Status command with comprehensive analytics"""
         start_time = datetime.now().timestamp()

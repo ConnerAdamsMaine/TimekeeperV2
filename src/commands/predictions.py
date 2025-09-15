@@ -16,6 +16,7 @@ from Utils.timekeeper import (
     CircuitBreakerOpenError,
     TimeTrackerError
 )
+from Utils.activation import require_activation_slash
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -94,11 +95,11 @@ class PredictionCog(commands.Cog):
     # ========================================================================
     # INSIGHTS COMMAND
     # ========================================================================
-    
     @app_commands.command(name="insights", description="🧠 Get advanced productivity insights and analytics")
     @app_commands.describe(
         user="Get insights for specific user (optional, admin only)"
     )
+    @require_activation_slash
     async def insights(self, interaction: discord.Interaction, user: Optional[discord.Member] = None):
         """Advanced productivity insights and analytics"""
         await interaction.response.defer()

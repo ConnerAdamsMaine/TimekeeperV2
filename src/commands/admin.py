@@ -5,6 +5,7 @@ import logging
 from typing import Optional, Dict, Any, List
 import asyncio
 from datetime import datetime, timedelta
+from Utils.activation import require_activation_slash
 
 # Import the enhanced shared tracker system
 from Utils.timekeeper import (
@@ -109,6 +110,7 @@ class TimecardAdminCog(commands.Cog):
         app_commands.Choice(name="add", value="add"),
         app_commands.Choice(name="remove", value="remove")
     ])
+    @require_activation_slash
     async def admin_categories(self, interaction: discord.Interaction, action: str, 
                               name: Optional[str] = None, description: Optional[str] = None, 
                               color: Optional[str] = None):
@@ -316,8 +318,9 @@ class TimecardAdminCog(commands.Cog):
             logger.error(f"Error in admin categories command: {e}")
             embed = self._create_generic_error_embed(e)
             await interaction.followup.send(embed=embed)
-    
+
     @admin_group.command(name="system", description="🔧 View system status and health metrics")
+    @require_activation_slash
     async def admin_system(self, interaction: discord.Interaction):
         """System status and health monitoring for admins"""
         await interaction.response.defer()
@@ -422,6 +425,7 @@ class TimecardAdminCog(commands.Cog):
             await interaction.followup.send(embed=embed)
     
     @admin_group.command(name="cleanup", description="🧹 Clean up orphaned roles and sessions")
+    @require_activation_slash
     async def admin_cleanup(self, interaction: discord.Interaction):
         """Clean up orphaned timekeeper roles and sessions"""
         await interaction.response.defer()

@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 
 from Utils.timekeeper import create_ultimate_system
+from Utils.activation import require_activation_slash
 
 logger = logging.getLogger("commands.config")
 logger.setLevel(logging.INFO)
@@ -102,7 +103,6 @@ class TimeTrackerConfig(commands.Cog):
     # ========================================================================
     # CATEGORY MANAGEMENT
     # ========================================================================
-
     @app_commands.command(name="config", description="Configure time tracking settings (Admin only)")
     @app_commands.describe(
         action="Configuration action to perform",
@@ -132,6 +132,7 @@ class TimeTrackerConfig(commands.Cog):
         app_commands.Choice(name="🔴 Disable System", value="disable_system"),
         app_commands.Choice(name="🟢 Enable System", value="enable_system"),
     ])
+    @require_activation_slash
     async def config(
         self,
         interaction: discord.Interaction,
