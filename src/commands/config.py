@@ -213,7 +213,7 @@ class TimeTrackerConfig(commands.Cog):
 
     async def _handle_list_categories(self, interaction: discord.Interaction):
         """List all categories"""
-        categories = await self.tracker.get_server_categories(interaction.guild.id)
+        categories = await self.tracker.get_server(interaction.guild.id)
         
         if categories:
             embed = discord.Embed(
@@ -243,7 +243,7 @@ class TimeTrackerConfig(commands.Cog):
             return
         
         try:
-            await self.tracker.create_category(interaction.guild.id, category)
+            await self.tracker.add_category(interaction.guild.id, category)
             
             embed = discord.Embed(
                 title="✅ Category Added",
@@ -968,4 +968,3 @@ class ConfirmationView(discord.ui.View):
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(TimeTrackerConfig(bot))
-    logging.log(logging.INFO, "TimeTrackerConfig Cog Loaded")

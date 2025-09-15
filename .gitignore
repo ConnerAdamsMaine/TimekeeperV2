@@ -14,3 +14,4 @@ GithubBot.*
 logs/*
 *.log
 *.txt
+/Media
