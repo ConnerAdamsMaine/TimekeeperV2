@@ -177,7 +177,7 @@ class TimecardCog(commands.Cog):
         description="Optional description for this session"
     )
     @require_activation_slash
-    async def clockin(self, interaction: discord.Interaction, category: str = "work", description: Optional[str] = None):
+    async def clockin(self, interaction: discord.Interaction, category: str = "main", description: Optional[str] = None):
         """Clock in command with enterprise features"""
         start_time = datetime.now().timestamp()
         await interaction.response.defer()
@@ -191,7 +191,11 @@ class TimecardCog(commands.Cog):
                 include_metadata=True
             )
             
-            category = category.lower().strip()
+            match category.lower().strip():
+                case 'break':
+                    role = "Break"
+                case _:
+                    role = "Clocked In"
             
             # Check if server has ANY categories set up
             if not categories_info:
@@ -268,6 +272,7 @@ class TimecardCog(commands.Cog):
                 interaction.guild.id,
                 interaction.user.id,
                 category,
+                role,
                 metadata=session_metadata
             )
             

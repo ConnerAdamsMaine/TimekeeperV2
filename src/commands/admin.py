@@ -7,7 +7,6 @@ import asyncio
 from datetime import datetime, timedelta
 from Utils.activation import require_activation_slash
 
-# Import the enhanced shared tracker system
 from Utils.timekeeper import (
     get_shared_role_tracker, 
     get_system_status,
@@ -18,7 +17,6 @@ from Utils.timekeeper import (
     TimeTrackerError
 )
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
 

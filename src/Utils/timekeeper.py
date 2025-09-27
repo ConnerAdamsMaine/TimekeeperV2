@@ -3,6 +3,8 @@ import redis.asyncio as redis
 from typing import Dict, Optional, List, Set, Any, Tuple, Union, Callable
 import logging
 from datetime import datetime, timedelta
+import discord
+from discord import utils
 import json
 import os
 import time
@@ -3955,10 +3957,10 @@ class UltimateClockManager:
             logger.error(f"Error getting active session: {e}")
             return None
     
-    async def _get_or_create_role(self, guild, category: str):
+    async def _get_or_create_role(self, guild, category: str, role: str):
         """Get or create Discord role for category with caching"""
         try:
-            role_name = f"⏰ {category.title()}"
+            role_name = f"⏰ {role}"
             cache_key = f"role:{guild.id}:{role_name}"
             
             # Check cache
@@ -3972,28 +3974,14 @@ class UltimateClockManager:
                     del self.role_cache[cache_key]
             
             # Look for existing role
-            existing_role = discord.utils.get(guild.roles, name=role_name)
+            existing_role = utils.get(guild.roles, name=role_name)
             if existing_role:
                 self.role_cache[cache_key] = existing_role.id
                 return existing_role
             
-            # Create new role
-            import discord
-            color_map = {
-                'work': 0x3498db,       # Blue
-                'break': 0xe74c3c,      # Red
-                'meeting': 0x9b59b6,    # Purple
-                'development': 0x2ecc71, # Green
-                'support': 0xf39c12,    # Orange
-                'training': 0x1abc9c,   # Teal
-                'admin': 0x34495e       # Dark gray
-            }
-            
-            color = color_map.get(category, 0x95a5a6)  # Default gray
-            
             role = await guild.create_role(
                 name=role_name,
-                color=discord.Color(color),
+                color=discord.Color.blurple,
                 hoist=False,
                 mentionable=False,
                 reason=f"Timekeeper role for {category}"
