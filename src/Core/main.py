@@ -41,7 +41,7 @@ class Bot(commands.Bot):
     async def load_server_command(self):
         @self.tree.command(name="activate", description="Activate the bot in this server")
         async def activate(interaction: discord.Interaction, key: str):
-            if interaction.user.guild_permissions.administrator is False or interaction.user.id != interaction.guild.owner_id:
+            if interaction.user.guild_permissions.administrator is True or interaction.user.id != interaction.guild.owner_id:
                 await interaction.response.send_message("You need to be an administrator or the owner to activate the bot.")
                 return
             await interaction.response.send_message(f"Activating bot with key: {key}")

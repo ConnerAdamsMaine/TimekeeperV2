@@ -104,7 +104,7 @@ class LeaderboardCog(commands.Cog):
         app_commands.Choice(name="This Week", value="week"),
         app_commands.Choice(name="This Month", value="month")
     ])
-    @require_activation_slash
+    
     async def leaderboard(self, interaction: discord.Interaction, 
                          category: Optional[str] = None, 
                          timeframe: Optional[str] = "all",

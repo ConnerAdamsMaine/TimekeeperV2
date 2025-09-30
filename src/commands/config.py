@@ -132,7 +132,7 @@ class TimeTrackerConfig(commands.Cog):
         app_commands.Choice(name="🔴 Disable System", value="disable_system"),
         app_commands.Choice(name="🟢 Enable System", value="enable_system"),
     ])
-    @require_activation_slash
+    
     async def config(
         self,
         interaction: discord.Interaction,

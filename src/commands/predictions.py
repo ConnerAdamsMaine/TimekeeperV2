@@ -99,7 +99,7 @@ class PredictionCog(commands.Cog):
     @app_commands.describe(
         user="Get insights for specific user (optional, admin only)"
     )
-    @require_activation_slash
+    
     async def insights(self, interaction: discord.Interaction, user: Optional[discord.Member] = None):
         """Advanced productivity insights and analytics"""
         await interaction.response.defer()
