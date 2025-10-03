@@ -25,7 +25,7 @@ All source code is contained within the `src/` directory, divided into:
 ## Installation / Setup
 1. Clone the repository:  
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/ConnerAdamsMaine/TimekeeperV2
    cd TimekeeperV2
 
 2. Install dependencies (Python 3.12 recommended, supported 3.6+):
