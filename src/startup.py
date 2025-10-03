@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':    
     TOKEN = os.getenv("DISCORD_AUTH_TOKEN")
     PREFIX = os.getenv("COMMAND_PREFIX", ".")
+    
+    bot = Bot(prefix=PREFIX, intents=discord.Intents.all())
+
+    bot.run(TOKEN)
 
 #if __name__ == '__main__':
 #    parser = argparse.ArgumentParser(description="Discord Bot")
