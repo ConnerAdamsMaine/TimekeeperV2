@@ -5,7 +5,7 @@ import logging
 import discord
 import tkinter as tk
 
-from Core.main import Bot
+from Core.Bot import Bot
 
 load_dotenv()
 
