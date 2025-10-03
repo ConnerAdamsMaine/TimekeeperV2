@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 from Utils.timekeeper import create_ultimate_system
-from Utils.activation import require_activation_slash
+# from Utils.activation import require_activation_slash
 
 logger = logging.getLogger("commands.config")
 logger.setLevel(logging.INFO)

@@ -16,7 +16,7 @@ from Utils.timekeeper import (
     CircuitBreakerOpenError,
     TimeTrackerError
 )
-from Utils.activation import require_activation_slash
+# from Utils.activation import require_activation_slash
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -176,29 +176,47 @@ class TimecardCog(commands.Cog):
         category="Category to track time for",
         description="Optional description for this session"
     )
-    
     async def clockin(self, interaction: discord.Interaction, category: str = "main", description: Optional[str] = None):
         """Clock in command with enterprise features"""
         start_time = datetime.now().timestamp()
+        
+        # LOG: Function entry
+        logger.info(f"[CLOCKIN] Function called - User: {interaction.user.id} ({interaction.user.name}), "
+                    f"Guild: {interaction.guild.id} ({interaction.guild.name}), "
+                    f"Category: '{category}', Description: '{description}'")
+        
         await interaction.response.defer()
+        logger.debug(f"[CLOCKIN] Interaction deferred for user {interaction.user.id}")
         
         try:
+            # LOG: Initialization start
+            logger.debug(f"[CLOCKIN] Starting initialization for user {interaction.user.id}")
             await self._ensure_initialized()
+            logger.info(f"[CLOCKIN] Initialization complete for user {interaction.user.id}")
             
-            # Check if server has categories configured
+            # LOG: Category lookup start
+            logger.debug(f"[CLOCKIN] Fetching categories for guild {interaction.guild.id}")
             categories_info = await self.tracker.list_categories(
                 interaction.guild.id, 
                 include_metadata=True
             )
+            logger.info(f"[CLOCKIN] Categories fetched - Count: {len(categories_info) if categories_info else 0}, "
+                        f"Categories: {list(categories_info.keys()) if categories_info else []}")
             
+            # LOG: Role determination
+            logger.debug(f"[CLOCKIN] Determining role for category '{category}'")
             match category.lower().strip():
                 case 'break':
                     role = "Break"
+                    logger.debug(f"[CLOCKIN] Role set to 'Break' for category '{category}'")
                 case _:
                     role = "Clocked In"
+                    logger.debug(f"[CLOCKIN] Role set to 'Clocked In' for category '{category}'")
             
-            # Check if server has ANY categories set up
+            # LOG: Check if categories exist
+            logger.debug(f"[CLOCKIN] Checking if server has categories configured")
             if not categories_info:
+                logger.warning(f"[CLOCKIN] No categories configured for guild {interaction.guild.id}")
                 embed = discord.Embed(
                     title="⚙️ Categories Not Configured",
                     description="This server hasn't set up any time tracking categories yet.",
@@ -207,25 +225,34 @@ class TimecardCog(commands.Cog):
                 embed.add_field(
                     name="👑 Server Admins",
                     value="Use `/admin categories add <n>` to set up your first category\n"
-                          "Example: `/admin categories add work`",
+                        "Example: `/admin categories add work`",
                     inline=False
                 )
                 embed.add_field(
                     name="💡 Suggested Categories",
                     value="• `work` - General work time\n"
-                          "• `meetings` - Team meetings\n" 
-                          "• `development` - Coding/development\n"
-                          "• `support` - Customer support\n"
-                          "• `training` - Learning & training",
+                        "• `meetings` - Team meetings\n" 
+                        "• `development` - Coding/development\n"
+                        "• `support` - Customer support\n"
+                        "• `training` - Learning & training",
                     inline=False
                 )
+                logger.debug(f"[CLOCKIN] Sending 'no categories' embed to user {interaction.user.id}")
                 await interaction.followup.send(embed=embed)
                 await self._track_command_performance("clockin", start_time, False)
+                logger.info(f"[CLOCKIN] Exiting early - no categories configured for guild {interaction.guild.id}")
                 return
             
+            # LOG: Category validation
+            logger.debug(f"[CLOCKIN] Validating if category '{category}' exists in server categories")
             if category not in categories_info:
+                logger.warning(f"[CLOCKIN] Category '{category}' not found in guild {interaction.guild.id}. "
+                            f"Available: {list(categories_info.keys())}")
+                
                 # Smart category suggestions from server's categories
+                logger.debug(f"[CLOCKIN] Generating category suggestions for '{category}'")
                 suggestions = self._get_category_suggestions(category, list(categories_info.keys()))
+                logger.debug(f"[CLOCKIN] Suggestions generated: {suggestions}")
                 
                 embed = discord.Embed(
                     title="❌ Category Not Available",
@@ -234,6 +261,7 @@ class TimecardCog(commands.Cog):
                 )
                 
                 if suggestions:
+                    logger.debug(f"[CLOCKIN] Adding suggestions to embed: {suggestions[:3]}")
                     embed.add_field(
                         name="🎯 Did you mean?",
                         value=", ".join(f"`{cat}`" for cat in suggestions[:3]),
@@ -242,6 +270,8 @@ class TimecardCog(commands.Cog):
                 
                 # Show server's configured categories
                 active_categories = [cat for cat, info in categories_info.items() if info.get('active', True)]
+                logger.debug(f"[CLOCKIN] Active categories: {active_categories}")
+                
                 if active_categories:
                     embed.add_field(
                         name="📋 Available Categories (Set by Server Admins)",
@@ -255,19 +285,26 @@ class TimecardCog(commands.Cog):
                     inline=False
                 )
                 
+                logger.debug(f"[CLOCKIN] Sending 'category not found' embed to user {interaction.user.id}")
                 await interaction.followup.send(embed=embed)
                 await self._track_command_performance("clockin", start_time, False)
+                logger.info(f"[CLOCKIN] Exiting early - invalid category '{category}' for guild {interaction.guild.id}")
                 return
             
-            # Prepare session metadata
+            # LOG: Prepare metadata
+            logger.debug(f"[CLOCKIN] Preparing session metadata for user {interaction.user.id}")
             session_metadata = {
                 'description': description,
                 'guild_name': interaction.guild.name,
                 'channel_id': interaction.channel_id,
                 'user_agent': 'Discord Bot v1.0'
             }
+            logger.debug(f"[CLOCKIN] Session metadata prepared: {session_metadata}")
             
-            # Attempt to clock in
+            # LOG: Clock in attempt
+            logger.info(f"[CLOCKIN] Attempting to clock in - User: {interaction.user.id}, "
+                    f"Guild: {interaction.guild.id}, Category: '{category}', Role: '{role}'")
+            
             result = await self.clock.clock_in(
                 interaction.guild.id,
                 interaction.user.id,
@@ -276,34 +313,52 @@ class TimecardCog(commands.Cog):
                 metadata=session_metadata
             )
             
+            logger.info(f"[CLOCKIN] Clock in result - Success: {result['success']}, "
+                    f"Message: {result.get('message', 'N/A')}, "
+                    f"Session ID: {result.get('session_id', 'N/A')}")
+            logger.debug(f"[CLOCKIN] Full result object: {result}")
+            
             if result['success']:
+                logger.info(f"[CLOCKIN] Clock in successful for user {interaction.user.id}")
+                
                 # Get category metadata for enhanced display
+                logger.debug(f"[CLOCKIN] Fetching category metadata for '{category}'")
                 category_info = categories_info.get(category, {})
                 category_metadata = category_info.get('metadata', {})
+                logger.debug(f"[CLOCKIN] Category metadata: {category_metadata}")
+                
+                # Parse color
+                color_hex = category_metadata.get('color', '#3498db')
+                logger.debug(f"[CLOCKIN] Using color: {color_hex}")
                 
                 embed = discord.Embed(
                     title="⏰ Successfully Clocked In",
                     description=result['message'],
-                    color=int(category_metadata.get('color', '#3498db').replace('#', ''), 16)
+                    color=int(color_hex.replace('#', ''), 16)
                 )
                 
                 # Main session info
+                logger.debug(f"[CLOCKIN] Building session details embed section")
                 embed.add_field(
                     name="📊 Session Details",
                     value=f"**Category:** `{result['category']}`\n"
-                          f"**Started:** <t:{int(result['start_time'].timestamp())}:t>\n"
-                          f"**Session ID:** `{result['session_id'][:8]}...`",
+                        f"**Started:** <t:{int(result['start_time'].timestamp())}:t>\n"
+                        f"**Session ID:** `{result['session_id'][:8]}...`",
                     inline=False
                 )
                 
                 # Role and system status
+                logger.debug(f"[CLOCKIN] Checking role assignment status")
                 status_items = []
                 if result.get('role_assigned'):
+                    logger.info(f"[CLOCKIN] Role assigned successfully for user {interaction.user.id}")
                     status_items.append("✅ Role assigned")
                 elif result.get('role_warning'):
+                    logger.warning(f"[CLOCKIN] Role warning for user {interaction.user.id}: {result['role_warning']}")
                     status_items.append(f"⚠️ {result['role_warning']}")
                 
                 if status_items:
+                    logger.debug(f"[CLOCKIN] Adding system status: {status_items}")
                     embed.add_field(
                         name="🔧 System Status",
                         value="\n".join(status_items),
@@ -313,7 +368,10 @@ class TimecardCog(commands.Cog):
                 # Category insights
                 if category_metadata:
                     productivity_weight = category_metadata.get('productivity_weight', 1.0)
+                    logger.debug(f"[CLOCKIN] Productivity weight: {productivity_weight}")
+                    
                     if productivity_weight != 1.0:
+                        logger.debug(f"[CLOCKIN] Adding productivity weight to embed")
                         embed.add_field(
                             name="📈 Category Info",
                             value=f"Productivity Weight: {productivity_weight}x",
@@ -321,7 +379,10 @@ class TimecardCog(commands.Cog):
                         )
                 
                 # Session tips based on category
+                logger.debug(f"[CLOCKIN] Fetching session tips for category '{category}'")
                 tips = self._get_session_tips(category)
+                logger.debug(f"[CLOCKIN] Tips: {tips if tips else 'None'}")
+                
                 if tips:
                     embed.add_field(
                         name="💡 Session Tips",
@@ -330,33 +391,57 @@ class TimecardCog(commands.Cog):
                     )
                 
                 embed.set_footer(text="Use /clockout when finished • /status for session details")
+                logger.debug(f"[CLOCKIN] Success embed built completely")
                 
             else:
+                logger.warning(f"[CLOCKIN] Clock in failed for user {interaction.user.id}: {result.get('message', 'Unknown error')}")
+                logger.debug(f"[CLOCKIN] Creating error embed from result")
                 embed = self._create_error_embed(result)
             
+            logger.debug(f"[CLOCKIN] Sending final embed to user {interaction.user.id}")
             await interaction.followup.send(embed=embed)
+            logger.info(f"[CLOCKIN] Embed sent successfully to user {interaction.user.id}")
+            
             await self._track_command_performance("clockin", start_time, result['success'])
+            logger.info(f"[CLOCKIN] Command performance tracked - Success: {result['success']}, "
+                    f"Duration: {datetime.now().timestamp() - start_time:.2f}s")
             
         except CircuitBreakerOpenError as e:
+            logger.error(f"[CLOCKIN] Circuit breaker open for user {interaction.user.id}: {e}")
+            logger.debug(f"[CLOCKIN] Circuit breaker context: {getattr(e, 'context', {})}")
+            
             embed = discord.Embed(
                 title="🔧 Service Temporarily Unavailable",
                 description="The timecard system is experiencing high load. Please try again in a moment.",
                 color=discord.Color.orange()
             )
+            
             if hasattr(e, 'context') and e.context.get('retry_after'):
+                retry_after = e.context['retry_after']
+                logger.info(f"[CLOCKIN] Retry after: {retry_after} seconds")
                 embed.add_field(
                     name="⏱️ Retry After",
-                    value=f"{e.context['retry_after']} seconds",
+                    value=f"{retry_after} seconds",
                     inline=True
                 )
+            
+            logger.debug(f"[CLOCKIN] Sending circuit breaker embed to user {interaction.user.id}")
             await interaction.followup.send(embed=embed)
             await self._track_command_performance("clockin", start_time, False)
+            logger.info(f"[CLOCKIN] Circuit breaker error handled for user {interaction.user.id}")
             
         except Exception as e:
-            logger.error(f"Error in clockin command: {e}")
+            logger.error(f"[CLOCKIN] Unexpected error for user {interaction.user.id}: {type(e).__name__}: {e}")
+            logger.exception(f"[CLOCKIN] Full exception traceback:")
+            
             embed = self._create_generic_error_embed(e)
+            logger.debug(f"[CLOCKIN] Sending generic error embed to user {interaction.user.id}")
+            
             await interaction.followup.send(embed=embed)
             await self._track_command_performance("clockin", start_time, False)
+            logger.error(f"[CLOCKIN] Error handling complete for user {interaction.user.id}")
+        
+        logger.info(f"[CLOCKIN] Function exit - User: {interaction.user.id}, Guild: {interaction.guild.id}")
     
     # ========================================================================
     # CLOCK OUT COMMAND

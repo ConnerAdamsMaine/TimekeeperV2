@@ -16,7 +16,7 @@ from Utils.timekeeper import (
     CircuitBreakerOpenError,
     TimeTrackerError
 )
-from Utils.activation import require_activation_slash
+# from Utils.activation import require_activation_slash
 
 # Configure logging
 logger = logging.getLogger(__name__)
