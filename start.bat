@@ -1,2 +1,1 @@
-cd src
-py startup.py
+cd src && python -m venv .venv && .venv\Scripts\activate && python -m pip --upgrade pip && pip install -r requirements.txt && cd src && python main.py

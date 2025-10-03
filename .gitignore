@@ -15,5 +15,3 @@ logs/*
 *.txt
 /Media
 activation.py
-start.sh
-start.bat
