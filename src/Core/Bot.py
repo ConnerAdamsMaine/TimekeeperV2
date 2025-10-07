@@ -38,6 +38,13 @@ class Bot(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, error):
         logger.log(logging.ERROR, f'Error occurred in command "{ctx.command}": {error}')
     
+    async def on_ready(self):
+        logger.log(logging.INFO, f'Logged in as {self.user} (ID: {self.user.id})')
+        logger.log(logging.INFO, f'Connected to {len(self.guilds)} guild(s).')
+        logger.log(logging.INFO, f'Loaded cogs: {self.added_cogs}')
+        for guild in self.guilds:
+            logger.log(logging.INFO, f'Connected to guild: {guild.name} (ID: {guild.id}) (Members: {guild.member_count})')
+    
 #    async def load_server_command(self):
 #        @self.tree.command(name="activate", description="Activate the bot in this server")
 #        async def activate(interaction: discord.Interaction, key: str):

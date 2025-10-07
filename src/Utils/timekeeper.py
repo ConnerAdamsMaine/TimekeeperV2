@@ -2323,19 +2323,23 @@ class UltimateTimeTracker(PermissionMixin):
             # Batch processor metrics
             batch_metrics = await self.batch_processor.get_metrics()
             
-            # Cache metrics
-            cache_metrics = {
-                'l1_size': len(self.l1_cache),
-                'l2_size': len(self.l2_cache),
-                'l3_size': len(self.l3_cache),
-                'user_cache_size': len(self.user_cache),
-                'leaderboard_cache_size': len(self.leaderboard_cache),
-                'settings_cache_size': len(self.settings_cache),
-                'analytics_cache_size': len(self.analytics_cache),
-                'hit_rate': (self.operation_metrics['cache_hits'] / 
-                           (self.operation_metrics['cache_hits'] + self.operation_metrics['cache_misses']) * 100
-                           if self.operation_metrics['cache_misses'] > 0 else 100)
-            }
+            try:    
+                # Cache metrics
+                cache_metrics = {
+                    'l1_size': len(self.l1_cache),
+                    'l2_size': len(self.l2_cache),
+                    'l3_size': len(self.l3_cache),
+                    'user_cache_size': len(self.user_cache),
+                    'leaderboard_cache_size': len(self.leaderboard_cache),
+                    'settings_cache_size': len(self.settings_cache),
+                    'analytics_cache_size': len(self.analytics_cache),
+                    'hit_rate': (self.operation_metrics['cache_hits'] / 
+                            (self.operation_metrics['cache_hits'] + self.operation_metrics['cache_misses']) * 100
+                            if self.operation_metrics['cache_misses'] > 0 else 100)
+                }
+            except Exception as e:
+                logger.error(f"Error building cache metrics: {e}")
+                cache_metrics = {}
             
             # Analytics metrics (if enabled)
             analytics_metrics = {}
@@ -3436,7 +3440,8 @@ class UltimateClockManager:
         logger.info("UltimateClockManager initialized with enterprise features")
     
     async def clock_in(self, server_id: int, user_id: int, category: str,
-                      metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+                      role: str, interaction: discord.Interaction, metadata: Dict[str, Any] = None
+                      ) -> Dict[str, Any]:
         """Enhanced clock in with comprehensive session management"""
         try:
             # Check if already clocked in
@@ -3488,37 +3493,26 @@ class UltimateClockManager:
             role_assigned = False
             role_error = None
             
-            if self.bot:
-                try:
-                    guild = self.bot.get_guild(server_id)
-                    if guild:
-                        member = guild.get_member(user_id)
-                        if member:
-                            role = await self._get_or_create_role(guild, category)
-                            if role:
-                                await member.add_roles(role, reason=f"Clocked into {category}")
-                                session_data['role_id'] = role.id
-                                role_assigned = True
-                                self.session_metrics['role_assignments_successful'] += 1
-                                
-                                # Update session with role info
-                                await self.redis.setex(
-                                    session_key,
-                                    session_ttl,
-                                    json.dumps(session_data)
-                                )
-                            else:
-                                role_error = "Could not create role"
-                        else:
-                            role_error = "Member not found in guild"
-                    else:
-                        role_error = "Guild not found"
-                        
-                except Exception as e:
-                    role_error = str(e)
-                    logger.warning(f"Role assignment failed for user {user_id}: {e}")
-                    self.session_metrics['role_assignments_failed'] += 1
-            
+            try:
+                role = await self._get_or_create_role(guild, role)
+                if role:
+                    await interaction.user.add_roles(role, reason=f"Clocked into {category}")
+                    session_data['role_id'] = role.id
+                    role_assigned = True
+                    self.session_metrics['role_assignments_successful'] += 1
+
+                    await self.redis.setex(
+                        session_key,
+                        session_ttl,
+                        json.dumps(session_data)
+                    )
+                else:
+                    role_error = "Could not create/find role"
+            except Exception as e:
+                role_error = str(e)
+                logger.warning(f"Role assignment failed for user {user_id}: {e}")
+                self.session_metrics['role_assignments_failed'] += 1
+
             # Cache session locally
             cache_key = f"{server_id}:{user_id}"
             self.active_sessions_cache[cache_key] = session_data
@@ -4138,3 +4132,14 @@ async def create_clock_manager():
     """Legacy function for backward compatibility"""  
     logger.warning("create_clock_manager() is deprecated. Use get_shared_tracker() instead.")
     return await get_shared_tracker()
+
+def find_Deque():
+    import sys
+    module = sys.modules[__name__]
+    deques = {}
+    
+    for name, obj in vars(module).items():
+        if isinstance(obj, deque):
+            deques[name] = obj
+    
+    return deques

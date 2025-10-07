@@ -7,7 +7,7 @@ import asyncio
 import json
 from datetime import datetime
 
-from Utils.timekeeper import create_ultimate_system
+from Utils.timekeeper import get_shared_tracker
 # from Utils.activation import require_activation_slash
 
 logger = logging.getLogger("commands.config")
@@ -33,7 +33,7 @@ class TimeTrackerConfig(commands.Cog):
                 return
             
             try:
-                self.tracker, self.clock = await create_ultimate_system()
+                self.tracker, self.clock = await get_shared_tracker()
                 self._initialized = True
                 logger.info("Config system initialized successfully")
             except Exception as e:
@@ -99,6 +99,40 @@ class TimeTrackerConfig(commands.Cog):
                 return False, f"You need one of these roles: {', '.join(role_names)}"
         
         return True, ""
+    
+    # ========================================================================
+    # DEV MANAGEMENT
+    # ========================================================================    
+    @app_commands.command(name="deques", description="Show all deque objects in timekeeper.py")
+    async def deques(self, interaction: discord.Interaction):
+        """Show all deque objects in timekeeper.py"""
+        if interaction.user.id != 473622504586477589:  # Replace with your Discord user ID
+            await interaction.response.send_message("❌ You do not have permission to use this command.", ephemeral=True)
+            return
+        
+        await self._ensure_initialized()
+        await interaction.response.defer()
+        
+        try:
+            import inspect
+            import collections
+            from Utils import timekeeper
+            
+            deque_info = []
+            for name, obj in inspect.getmembers(timekeeper):
+                if isinstance(obj, collections.deque):
+                    deque_info.append(f"• `{name}`: {len(obj)} items")
+            
+            if not deque_info:
+                message = "No deque objects found in timekeeper.py."
+            else:
+                message = "Deque objects in timekeeper.py:\n" + "\n".join(deque_info)
+            
+            await interaction.followup.send(message, ephemeral=True)
+            
+        except Exception as e:
+            await interaction.followup.send(f"❌ Error retrieving deque info: {str(e)}", ephemeral=True)
+            logger.error(f"Deque command error: {e}", exc_info=True)
 
     # ========================================================================
     # CATEGORY MANAGEMENT
@@ -114,7 +148,6 @@ class TimeTrackerConfig(commands.Cog):
     @app_commands.choices(action=[
         app_commands.Choice(name="📋 List Categories", value="list_categories"),
         app_commands.Choice(name="➕ Add Category", value="add_category"),
-        app_commands.Choice(name="🔄 Rename Category", value="rename_category"),
         app_commands.Choice(name="🗑️ Remove Category", value="remove_category"),
         app_commands.Choice(name="👤 User Stats", value="user_stats"),
         app_commands.Choice(name="⏰ Set User Time", value="set_user_time"),
@@ -162,8 +195,6 @@ class TimeTrackerConfig(commands.Cog):
                 await self._handle_list_categories(interaction)
             elif action == "add_category":
                 await self._handle_add_category(interaction, category)
-            elif action == "rename_category":
-                await self._handle_rename_category(interaction, category, value)
             elif action == "remove_category":
                 await self._handle_remove_category(interaction, category)
             elif action == "user_stats":
@@ -214,7 +245,7 @@ class TimeTrackerConfig(commands.Cog):
 
     async def _handle_list_categories(self, interaction: discord.Interaction):
         """List all categories"""
-        categories = await self.tracker.get_server(interaction.guild.id)
+        categories = await self.tracker.list_categories(interaction.guild.id)
         
         if categories:
             embed = discord.Embed(
@@ -258,27 +289,6 @@ class TimeTrackerConfig(commands.Cog):
         except Exception as e:
             await interaction.followup.send(f"❌ Failed to add category: {str(e)}", ephemeral=True)
 
-    async def _handle_rename_category(self, interaction: discord.Interaction, old_name: str, new_name: str):
-        """Rename a category"""
-        if not old_name or not new_name:
-            await interaction.followup.send("❌ Please provide both old and new category names!\nUsage: `/config rename_category category:old_name value:new_name`", ephemeral=True)
-            return
-        
-        try:
-            await self.tracker.rename_category(interaction.guild.id, old_name, new_name)
-            
-            embed = discord.Embed(
-                title="🔄 Category Renamed",
-                description=f"Renamed `{old_name}` → `{new_name}`",
-                color=discord.Color.green()
-            )
-            await interaction.followup.send(embed=embed)
-            
-            logger.info(f"Admin {interaction.user.id} renamed category '{old_name}' to '{new_name}' in server {interaction.guild.id}")
-            
-        except Exception as e:
-            await interaction.followup.send(f"❌ Failed to rename category: {str(e)}", ephemeral=True)
-
     async def _handle_remove_category(self, interaction: discord.Interaction, category: str):
         """Remove a category"""
         if not category:
@@ -300,7 +310,7 @@ class TimeTrackerConfig(commands.Cog):
         
         if view.confirmed:
             try:
-                await self.tracker.remove_category(interaction.guild.id, category, remove_user_data=True)
+                await self.tracker.remove_category(interaction.guild.id, category, force=True)
                 
                 embed = discord.Embed(
                     title="🗑️ Category Removed",
@@ -335,7 +345,7 @@ class TimeTrackerConfig(commands.Cog):
             await interaction.followup.send("❌ Please specify a user!", ephemeral=True)
             return
         
-        user_stats = await self.tracker.get_user_stats(interaction.guild.id, user.id)
+        user_stats = await self.tracker.get_user_times(interaction.guild.id, user.id)
         
         embed = discord.Embed(
             title=f"📊 Stats for {user.display_name}",
